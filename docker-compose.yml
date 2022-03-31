@@ -1,0 +1,53 @@
+version: '3.9'
+services:
+  zookeeper:
+    container_name: zookeeper
+    image: zookeeper
+    hostname: zookeeper
+    ports:
+      - 2181:2181
+
+  kafka:
+    image: ches/kafka
+    container_name: kafka
+    hostname: kafka
+    ports:
+      - 9092:9092
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      ZOOKEEPER_IP: zookeeper
+    depends_on:
+      - zookeeper
+
+  producer:
+    container_name: producer
+    build: ./producer
+    env_file:
+      - producer/.env
+    volumes:
+      - ./producer:/usr/src/producer
+      - /usr/src/producer/node_modules
+    ports:
+      - 3001:3001
+    depends_on:
+      - zookeeper
+      - kafka
+    restart: always
+    command: npm run dev
+
+  consumer:
+    container_name: consumer
+    build: ./consumer
+    env_file:
+      - consumer/.env
+    volumes:
+      - ./consumer:/usr/src/consumer
+      - /usr/src/consumer/node_modules
+    ports:
+      - 3000:3000
+    depends_on:
+      - zookeeper
+      - kafka
+    restart: always
+    command: npm run dev
+
